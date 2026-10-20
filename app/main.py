@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.database import Base, engine
-from app.routers import sessions
+from app.routers import sessions, streaks
 
 
 @asynccontextmanager
@@ -31,6 +31,7 @@ app = FastAPI(
 )
 
 app.include_router(sessions.router)
+app.include_router(streaks.router)
 
 
 @app.get("/api/health", summary="Health check endpoint")

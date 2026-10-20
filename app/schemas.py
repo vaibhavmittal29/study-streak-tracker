@@ -70,3 +70,18 @@ class SessionList(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class StreakOut(BaseModel):
+    """Streak statistics, status flags, and freeze metrics."""
+
+    current_streak: int
+    longest_streak: int
+    studied_today: bool
+    streak_at_risk: bool
+    last_study_date: date | None
+    freeze_enabled: bool
+    freeze_available_this_week: bool
+    frozen_dates: list[date]
+    today: date
+    week_start: date
