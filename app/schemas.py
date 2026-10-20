@@ -85,3 +85,100 @@ class StreakOut(BaseModel):
     frozen_dates: list[date]
     today: date
     week_start: date
+
+
+class SubjectStat(BaseModel):
+    """Subject study summary."""
+
+    subject: str
+    minutes: int
+    sessions: int
+
+
+class WeeklyStatsOut(BaseModel):
+    """Weekly study minutes grouped by subject for the active ISO week."""
+
+    week_start: date
+    week_end: date
+    total_minutes: int
+    subjects: list[SubjectStat]
+
+
+class TimeSeriesPoint(BaseModel):
+    """Single aggregated data point in time series."""
+
+    date: str  # YYYY-MM-DD
+    minutes: int
+    sessions: int
+
+
+class TimeSeriesOut(BaseModel):
+    """Zero-filled time series for charts."""
+
+    from_date: date
+    to_date: date
+    granularity: str
+    points: list[TimeSeriesPoint]
+    total_minutes: int
+
+
+class SettingsBase(BaseModel):
+    """Settings payload schema."""
+
+    timezone: str = "Asia/Kolkata"
+    freeze_enabled: bool = True
+    daily_goal_minutes: int | None = None
+    weekly_goal_minutes: int | None = None
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, v: str) -> str:
+        """Ensure timezone string is a recognized IANA timezone identifier."""
+        import zoneinfo
+
+        if v not in zoneinfo.available_timezones():
+            raise ValueError(f"Invalid IANA timezone: '{v}'")
+        return v
+
+    @field_validator("daily_goal_minutes", "weekly_goal_minutes")
+    @classmethod
+    def validate_positive_goals(cls, v: int | None) -> int | None:
+        """Goals must be positive integers or null."""
+        if v is not None and v <= 0:
+            raise ValueError("Goal minutes must be a positive integer greater than 0")
+        return v
+
+
+class SettingsOut(SettingsBase):
+    """Settings response model."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DailyGoalProgress(BaseModel):
+    """Daily goal achievement breakdown."""
+
+    goal_minutes: int
+    done_minutes: int
+    percent: float
+    remaining: int
+    met: bool
+
+
+class WeeklyGoalProgress(BaseModel):
+    """Weekly goal achievement breakdown."""
+
+    goal_minutes: int
+    done_minutes: int
+    percent: float
+    remaining: int
+    met: bool
+    days_left_including_today: int
+    required_per_day: int
+
+
+class GoalsProgressOut(BaseModel):
+    """Progress towards daily and weekly study targets."""
+
+    daily: DailyGoalProgress | None
+    weekly: WeeklyGoalProgress | None
