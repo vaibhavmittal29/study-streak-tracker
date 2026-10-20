@@ -4,17 +4,25 @@ Configures application metadata, lifespan lifecycle (table creation),
 and core health endpoints.
 """
 
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.database import Base, engine
 from app.routers import export, goals, sessions, stats, streaks
 from app.routers import settings as settings_router
+
+# Configure clean structured logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger("study_tracker")
 
 
 @asynccontextmanager
@@ -40,6 +48,17 @@ app.include_router(stats.router)
 app.include_router(settings_router.router)
 app.include_router(goals.router)
 app.include_router(export.router)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Safely log uncaught internal exceptions without leaking stack traces."""
+    logger.error("Uncaught exception on %s %s: %s", request.method, request.url.path, exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred"},
+    )
+
 
 # Static file serving & single-page application mount
 static_dir = Path(__file__).parent / "static"

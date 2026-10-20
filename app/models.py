@@ -25,9 +25,7 @@ class StudySession(Base):
     date: Mapped[datetime.date] = mapped_column(Date, nullable=False, index=True)
     notes: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=utc_now, nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )

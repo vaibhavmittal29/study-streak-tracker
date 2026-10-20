@@ -10,7 +10,7 @@ def test_index_html_serving(client: TestClient) -> None:
     assert "text/html" in response.headers["content-type"]
     assert "<title>Study Streak Tracker</title>" in response.text
     assert "Study Streak Tracker" in response.text
-    assert "id=\"session-form\"" in response.text
+    assert 'id="session-form"' in response.text
 
 
 def test_static_assets_serving(client: TestClient) -> None:

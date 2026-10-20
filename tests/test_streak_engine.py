@@ -213,11 +213,7 @@ def test_e21_performance_5_years_under_50ms() -> None:
     start_date = today - timedelta(days=1826)
     # Realistic density: studied 70% of days
     rng = random.Random(42)
-    study_dates = {
-        start_date + timedelta(days=i)
-        for i in range(1826)
-        if rng.random() > 0.3
-    }
+    study_dates = {start_date + timedelta(days=i) for i in range(1826) if rng.random() > 0.3}
     study_dates.add(today)
 
     t0 = time.perf_counter()
@@ -242,6 +238,7 @@ def test_e22_longest_streak_ended_in_past() -> None:
 
 
 # --- Brute-force reference implementation and randomized property test ---
+
 
 def naive_streak_simulator(
     study_dates: set[date], today: date, freeze_enabled: bool = True
@@ -284,9 +281,7 @@ def test_randomized_equivalence_with_reference_simulator() -> None:
         start = base_today - timedelta(days=span_days)
         prob = rng.uniform(0.1, 0.9)
         test_dates = {
-            start + timedelta(days=i)
-            for i in range(span_days + 1)
-            if rng.random() < prob
+            start + timedelta(days=i) for i in range(span_days + 1) if rng.random() < prob
         }
         freeze = rng.choice([True, False])
 

@@ -19,9 +19,7 @@ if settings.DATABASE_URL.startswith("sqlite:///./"):
     db_file_path.parent.mkdir(parents=True, exist_ok=True)
 
 # SQLite requires check_same_thread=False when accessed by FastAPI threads
-connect_args = (
-    {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
-)
+connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
 
 engine = create_engine(
     settings.DATABASE_URL,

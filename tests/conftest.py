@@ -45,6 +45,7 @@ def db_session() -> Generator[Session, None, None]:
 @pytest.fixture
 def client(db_session: Session) -> Generator[TestClient, None, None]:
     """Provide a TestClient with the database dependency overridden."""
+
     def override_get_db() -> Generator[Session, None, None]:
         yield db_session
 
@@ -57,6 +58,7 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
 @pytest.fixture
 def override_clock():
     """Fixture returning a context or callable to fix the clock to a specific date."""
+
     def _set_clock(fixed_date: date):
         app.dependency_overrides[get_clock] = lambda: fixed_date
         return fixed_date

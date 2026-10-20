@@ -16,8 +16,7 @@ def test_export_empty_returns_header_only(client: TestClient, override_clock) ->
     assert res.status_code == 200
     assert "text/csv" in res.headers["content-type"]
     assert (
-        'attachment; filename="study_sessions_2026-10-20.csv"'
-        in res.headers["content-disposition"]
+        'attachment; filename="study_sessions_2026-10-20.csv"' in res.headers["content-disposition"]
     )
 
     reader = list(csv.reader(io.StringIO(res.text)))

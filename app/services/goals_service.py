@@ -47,9 +47,7 @@ def compute_goal_progress(db: Session, today: date) -> GoalsProgressOut:
         weekly_remaining = max(0, weekly_goal - weekly_done)
         days_left_including_today = 7 - today.weekday()
         required_per_day = (
-            math.ceil(weekly_remaining / days_left_including_today)
-            if weekly_remaining > 0
-            else 0
+            math.ceil(weekly_remaining / days_left_including_today) if weekly_remaining > 0 else 0
         )
         weekly_progress = WeeklyGoalProgress(
             goal_minutes=weekly_goal,
