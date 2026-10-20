@@ -1,3 +1,3 @@
-# Firefox Study Streak Tracker
+# Study Streak Tracker
 
-AI/ML powered study streak and habit tracker Firefox browser extension.
+AI/ML powered study streak and habit tracker browser extension.
