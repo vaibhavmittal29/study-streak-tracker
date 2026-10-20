@@ -1,10 +1,23 @@
 """FastAPI entry point for the Study Streak Tracker.
 
-Configures application metadata, lifespan lifecycle, API routers,
-and health endpoints.
+Configures application metadata, lifespan lifecycle (table creation),
+and core health endpoints.
 """
 
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
+
+from app.database import Base, engine
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Perform startup tasks: initialize database tables."""
+    Base.metadata.create_all(bind=engine)
+    yield
+
 
 app = FastAPI(
     title="Study Streak Tracker",
@@ -13,6 +26,7 @@ app = FastAPI(
         "weekly subject statistics, and AI/ML-driven consistency forecasting."
     ),
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 
