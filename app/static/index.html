@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Streak Tracker</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/vendor/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container" role="status" aria-live="polite"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner container">
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+          <circle cx="12" cy="12" r="4"/>
+        </svg>
+        <div class="brand-text">
+          <h1>Study Streak Tracker</h1>
+          <span class="badge" id="timezone-badge" title="Active Timezone">UTC</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="export-csv-btn" class="btn btn-secondary" title="Export study sessions as CSV">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export CSV
+        </button>
+        <button id="settings-btn" class="btn btn-secondary btn-icon-only" title="Settings" aria-label="Settings">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="container main-content">
+    
+    <!-- 1. Streak Overview Cards -->
+    <section class="streak-grid" aria-label="Streak metrics">
+      <div class="card streak-card" id="card-current-streak">
+        <div class="streak-icon flame-bg">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"/>
+          </svg>
+        </div>
+        <div class="streak-info">
+          <span class="label">Current Streak</span>
+          <div class="streak-value" id="val-current-streak">0 <span class="unit">days</span></div>
+          <span class="subtext" id="sub-today-status">Loading...</span>
+        </div>
+      </div>
+
+      <div class="card streak-card" id="card-longest-streak">
+        <div class="streak-icon trophy-bg">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+            <path d="M4 22h16"/>
+            <path d="M10 14.66V17c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v1h10v-1c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-2.34"/>
+            <path d="M6 4h12v7a6 6 0 0 1-12 0V4z"/>
+          </svg>
+        </div>
+        <div class="streak-info">
+          <span class="label">Longest Streak</span>
+          <div class="streak-value" id="val-longest-streak">0 <span class="unit">days</span></div>
+          <span class="subtext" id="sub-longest-info">All-time record</span>
+        </div>
+      </div>
+
+      <div class="card streak-card" id="card-freeze-status">
+        <div class="streak-icon freeze-bg">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07l14.14-14.14"/>
+          </svg>
+        </div>
+        <div class="streak-info">
+          <span class="label">Weekly Freeze</span>
+          <div class="streak-value text-sm" id="val-freeze-status">Available</div>
+          <span class="subtext" id="sub-freeze-info">1 protected miss/week</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Dual Column Section: Log Form & Goal Progress -->
+    <div class="grid-2-col">
+      <!-- Log Session Form -->
+      <section class="card form-card">
+        <h2>Log Study Session</h2>
+        <form id="session-form" novalidate>
+          <div class="form-group">
+            <label for="form-subject">Subject <span class="required">*</span></label>
+            <input type="text" id="form-subject" list="subject-datalist" placeholder="e.g. Data Structures & Algorithms" maxlength="50" required autocomplete="off">
+            <datalist id="subject-datalist"></datalist>
+            <span class="field-error" id="err-subject"></span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="form-duration">Duration (minutes) <span class="required">*</span></label>
+              <input type="number" id="form-duration" min="1" max="1440" placeholder="60" required>
+              <span class="field-error" id="err-duration"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="form-date">Date <span class="required">*</span></label>
+              <div class="date-input-wrap">
+                <input type="date" id="form-date" required>
+                <div class="quick-date-btns">
+                  <button type="button" class="btn btn-xs" id="quick-today-btn">Today</button>
+                  <button type="button" class="btn btn-xs" id="quick-yesterday-btn">Yesterday</button>
+                </div>
+              </div>
+              <span class="field-error" id="err-date"></span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="form-notes">Notes (optional)</label>
+            <input type="text" id="form-notes" placeholder="e.g. Solved 3 dynamic programming problems" maxlength="200">
+          </div>
+
+          <button type="submit" id="submit-session-btn" class="btn btn-primary btn-block">
+            <span id="submit-btn-text">Save Session</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Goals Progress -->
+      <section class="card goals-card">
+        <div class="card-header-flex">
+          <h2>Goal Progress</h2>
+          <button id="edit-goals-btn" class="btn btn-link btn-xs">Adjust Goals</button>
+        </div>
+        <div id="goals-content" class="goals-content">
+          <!-- Filled dynamically -->
+        </div>
+      </section>
+    </div>
+
+    <!-- 3. Dual Column Section: Weekly Stats & Chart -->
+    <div class="grid-2-col">
+      <!-- Weekly Subject Breakdown -->
+      <section class="card weekly-card">
+        <div class="card-header-flex">
+          <h2>This Week by Subject</h2>
+          <span class="badge" id="weekly-total-badge">0 min</span>
+        </div>
+        <div id="weekly-stats-container" class="weekly-stats-container">
+          <!-- Filled dynamically -->
+        </div>
+      </section>
+
+      <!-- Chart Section -->
+      <section class="card chart-card">
+        <div class="card-header-flex chart-controls">
+          <h2>Study Time Chart</h2>
+          <div class="controls-group">
+            <div class="btn-toggle" role="group" aria-label="Chart Granularity">
+              <button class="btn-toggle-option active" data-granularity="day">Day</button>
+              <button class="btn-toggle-option" data-granularity="week">Week</button>
+            </div>
+            <div class="btn-toggle" role="group" aria-label="Chart Days Range">
+              <button class="btn-toggle-option" data-days="7">7d</button>
+              <button class="btn-toggle-option active" data-days="30">30d</button>
+              <button class="btn-toggle-option" data-days="90">90d</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-canvas-container">
+          <canvas id="study-chart"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <!-- 4. AI/ML Insights Card (Phase 9 Showcase Placeholder) -->
+    <section class="card insights-card" id="insights-card">
+      <div class="card-header-flex">
+        <div class="brand">
+          <svg class="brand-icon text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+            <line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+          <h2>AI / ML Insights & Forecast</h2>
+        </div>
+        <span class="badge badge-accent" id="ml-confidence-badge">Ready for Phase 9</span>
+      </div>
+      <div id="insights-content" class="insights-content">
+        <p class="placeholder-text">AI/ML consistent study forecast, next-day streak risk assessment, and smart study recommendations will activate in Phase 9.</p>
+      </div>
+    </section>
+
+    <!-- 5. Past Study Sessions Table -->
+    <section class="card table-card">
+      <div class="table-header-flex">
+        <h2>Past Study Sessions</h2>
+        <div class="table-filters">
+          <input type="text" id="filter-subject" placeholder="Filter subject..." class="input-sm">
+          <input type="date" id="filter-from" class="input-sm" title="From date">
+          <input type="date" id="filter-to" class="input-sm" title="To date">
+          <button id="clear-filters-btn" class="btn btn-secondary btn-xs">Reset</button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="sessions-table" id="sessions-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Subject</th>
+              <th>Duration</th>
+              <th>Notes</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sessions-tbody">
+            <!-- Filled dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-footer" id="table-footer">
+        <span id="pagination-info" class="text-sm">Showing 0 of 0</span>
+        <button id="load-more-btn" class="btn btn-secondary btn-sm" style="display:none;">Load More</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Edit Session Modal -->
+  <dialog id="edit-modal" class="modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Edit Study Session</h3>
+        <button id="close-edit-modal-btn" class="btn-close" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="edit-form">
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+          <label for="edit-subject">Subject <span class="required">*</span></label>
+          <input type="text" id="edit-subject" maxlength="50" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-duration">Duration (minutes) <span class="required">*</span></label>
+          <input type="number" id="edit-duration" min="1" max="1440" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-date">Date <span class="required">*</span></label>
+          <input type="date" id="edit-date" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-notes">Notes</label>
+          <input type="text" id="edit-notes" maxlength="200">
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-edit-btn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="save-edit-btn" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Settings Modal -->
+  <dialog id="settings-modal" class="modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Settings & Study Goals</h3>
+        <button id="close-settings-modal-btn" class="btn-close" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="settings-form">
+        <div class="form-group">
+          <label for="settings-timezone">Timezone (IANA)</label>
+          <input type="text" id="settings-timezone" placeholder="Asia/Kolkata" required>
+          <small class="field-hint">e.g. Asia/Kolkata, UTC, America/New_York</small>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="settings-freeze-enabled">
+            <span>Enable Weekly Streak Freeze (1 protected miss per ISO week)</span>
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="settings-daily-goal">Daily Goal (minutes)</label>
+          <input type="number" id="settings-daily-goal" min="1" placeholder="e.g. 90 (leave empty for none)">
+        </div>
+        <div class="form-group">
+          <label for="settings-weekly-goal">Weekly Goal (minutes)</label>
+          <input type="number" id="settings-weekly-goal" min="1" placeholder="e.g. 600 (leave empty for none)">
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-settings-btn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="save-settings-btn" class="btn btn-primary">Save Settings</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Delete Confirmation Dialog -->
+  <dialog id="delete-modal" class="modal">
+    <div class="modal-box modal-box-sm">
+      <div class="modal-header">
+        <h3>Confirm Deletion</h3>
+        <button id="close-delete-modal-btn" class="btn-close" aria-label="Close dialog">&times;</button>
+      </div>
+      <p class="modal-text">Are you sure you want to delete this study session? This will immediately recalculate your streak.</p>
+      <div class="modal-actions">
+        <button type="button" id="cancel-delete-btn" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="confirm-delete-btn" class="btn btn-danger">Delete Session</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
