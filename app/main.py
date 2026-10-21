@@ -14,7 +14,14 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.database import Base, engine
-from app.routers import export, goals, sessions, stats, streaks
+from app.routers import (
+    export,
+    goals,
+    insights,
+    sessions,
+    stats,
+    streaks,
+)
 from app.routers import settings as settings_router
 
 # Configure clean structured logging
@@ -48,6 +55,7 @@ app.include_router(stats.router)
 app.include_router(settings_router.router)
 app.include_router(goals.router)
 app.include_router(export.router)
+app.include_router(insights.router)
 
 
 @app.exception_handler(Exception)

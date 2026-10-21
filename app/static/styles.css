@@ -396,6 +396,150 @@ body {
   font-weight: 600;
 }
 
+/* AI / ML Insights Layout */
+.insights-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 850px) {
+  .insights-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.insight-metric-box {
+  background-color: var(--color-muted-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.insight-metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.insight-metric-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.insight-prob-display {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.insight-prob-value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.factors-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}
+
+.factor-item {
+  font-size: 0.8125rem;
+  color: var(--color-foreground);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.factor-bullet {
+  color: var(--color-primary);
+  font-weight: bold;
+}
+
+.forecast-sparkline {
+  display: flex;
+  gap: 0.35rem;
+  align-items: flex-end;
+  height: 60px;
+  margin-top: 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--color-card-border);
+}
+
+.forecast-day-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.forecast-bar-fill {
+  width: 100%;
+  background-color: var(--color-primary);
+  border-radius: 2px 2px 0 0;
+  min-height: 2px;
+}
+
+.forecast-day-label {
+  font-size: 0.65rem;
+  color: var(--color-muted);
+  margin-top: 0.2rem;
+}
+
+.recs-container {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.rec-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-muted-bg);
+  border-left: 3px solid var(--color-primary);
+  font-size: 0.85rem;
+}
+
+.rec-item.streak_at_risk {
+  border-left-color: var(--color-flame);
+}
+
+.rec-item.goal_pace {
+  border-left-color: var(--color-accent);
+}
+
+.rec-item.best_weekday {
+  border-left-color: var(--color-trophy);
+}
+
+.rec-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  background-color: var(--color-card);
+  color: var(--color-foreground);
+  flex-shrink: 0;
+}
+
 /* Forms */
 .form-group {
   margin-bottom: 1rem;

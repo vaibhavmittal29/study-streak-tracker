@@ -69,15 +69,11 @@ def seed_database(days: int = 120, reset: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Seed database with realistic demo study history."
-    )
+    parser = argparse.ArgumentParser(description="Seed database with realistic demo study history.")
     parser.add_argument(
         "--days", type=int, default=120, help="Number of past days to generate (default: 120)"
     )
-    parser.add_argument(
-        "--reset", action="store_true", help="Wipe existing records before seeding"
-    )
+    parser.add_argument("--reset", action="store_true", help="Wipe existing records before seeding")
     args = parser.parse_args()
 
     seed_database(days=args.days, reset=args.reset)

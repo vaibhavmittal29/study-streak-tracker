@@ -182,3 +182,58 @@ class GoalsProgressOut(BaseModel):
 
     daily: DailyGoalProgress | None
     weekly: WeeklyGoalProgress | None
+
+
+class ForecastDay(BaseModel):
+    """Predicted study duration for a single day."""
+
+    date: str
+    predicted_minutes: int
+
+
+class ForecastOut(BaseModel):
+    """7-day study minutes forecast with backtested error metrics."""
+
+    days: list[ForecastDay]
+    weekly_total: int
+    model_used: str
+    backtest_mae: float
+    baseline_mae: float
+    data_days: int
+    confidence: str
+
+
+class RiskMetrics(BaseModel):
+    """Model performance and baseline comparison scores."""
+
+    accuracy: float
+    f1: float
+    brier_score: float
+    baseline_majority_accuracy: float
+    baseline_persistence_accuracy: float
+
+
+class StreakRiskOut(BaseModel):
+    """Tomorrow's study likelihood and contributing behavioral factors."""
+
+    probability_study_tomorrow: float
+    risk_level: str
+    top_factors: list[str]
+    model_used: str
+    data_days: int
+    confidence: str
+    metrics: RiskMetrics | None
+
+
+class RecommendationOut(BaseModel):
+    """Explainable rule-based recommendation with underlying evidence."""
+
+    type: str
+    message: str
+    evidence: dict
+
+
+class RecommendationsListOut(BaseModel):
+    """List of tailored recommendations."""
+
+    recommendations: list[RecommendationOut]
