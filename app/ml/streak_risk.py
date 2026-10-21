@@ -54,6 +54,7 @@ def evaluate_classifier_chronological(X: "pd.DataFrame", y: "pd.Series") -> Risk
     from sklearn.model_selection import TimeSeriesSplit
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
+
     n_splits = min(4, max(2, len(X) // 10))
     tscv = TimeSeriesSplit(n_splits=n_splits)
 

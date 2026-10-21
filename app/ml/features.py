@@ -20,6 +20,7 @@ def build_daily_frame(
     session count, and a binary indicator whether study occurred.
     """
     import pandas as pd
+
     if start_date > end_date:
         raise ValueError(f"start_date ({start_date}) cannot be after end_date ({end_date})")
 

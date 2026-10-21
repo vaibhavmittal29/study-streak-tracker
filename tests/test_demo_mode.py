@@ -36,9 +36,7 @@ def test_seed_demo_data_idempotency_and_relative_clock(db_session, override_cloc
     assert c2 == c1
 
     # Verify no session exists for today
-    today_sessions = (
-        db_session.query(StudySession).filter(StudySession.date == test_today).count()
-    )
+    today_sessions = db_session.query(StudySession).filter(StudySession.date == test_today).count()
     assert today_sessions == 0
 
 
