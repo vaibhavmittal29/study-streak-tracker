@@ -5,13 +5,13 @@ Handles Render free-tier cold starts by retrying the initial health check
 up to 90 seconds.
 """
 
-from datetime import date
 import json
 import sys
 import time
-from urllib.error import HTTPError, URLError
 import urllib.parse
 import urllib.request
+from datetime import date
+from urllib.error import HTTPError, URLError
 
 
 def request(url: str, method: str = "GET", data: dict | None = None, timeout: float = 15.0):
@@ -71,7 +71,10 @@ def run_smoke_test(base_url: str) -> bool:
         time.sleep(3)
 
     if not health_ok:
-        print(f"  [FAIL] Server failed to respond to /api/health within 90s (last status: {status_code})")
+        print(
+            "  [FAIL] Server failed to respond to /api/health within 90s "
+            f"(last status: {status_code})"
+        )
         return False
 
     all_passed = True
@@ -89,7 +92,11 @@ def run_smoke_test(base_url: str) -> bool:
     # --- 2. GET / ---
     print("\n[STEP 2/13] Checking Dashboard HTML at / ...")
     sc, body, _, _ = request(f"{base_url}/")
-    check("GET / returns 200 with HTML", sc == 200 and "Study Streak Tracker" in body, f"status: {sc}")
+    check(
+        "GET / returns 200 with HTML",
+        sc == 200 and "Study Streak Tracker" in body,
+        f"status: {sc}",
+    )
 
     # --- 3. GET /docs ---
     print("\n[STEP 3/13] Checking Swagger API Docs at /docs ...")
@@ -105,7 +112,11 @@ def run_smoke_test(base_url: str) -> bool:
         sc == 200 and streak_data and all(k in streak_data for k in streak_keys),
         f"status: {sc}, data: {streak_data}",
     )
-    today_str = streak_data.get("today", date.today().isoformat()) if streak_data else date.today().isoformat()
+    today_str = (
+        streak_data.get("today", date.today().isoformat())
+        if streak_data
+        else date.today().isoformat()
+    )
 
     # --- 5. POST /api/sessions ---
     print(f"\n[STEP 5/13] Logging test session for date {today_str} ...")
@@ -127,11 +138,14 @@ def run_smoke_test(base_url: str) -> bool:
     print("\n[STEP 6/13] Verifying session list & studied_today flag ...")
     sc, _, list_data, _ = request(f"{base_url}/api/sessions?limit=5")
     sc_s, _, after_streak, _ = request(f"{base_url}/api/streak")
-    has_test_session = list_data and any(s.get("id") == session_id for s in list_data.get("items", []))
+    has_test_session = list_data and any(
+        s.get("id") == session_id for s in list_data.get("items", [])
+    )
+    studied_now = after_streak.get("studied_today") if after_streak else None
     check(
         "Created session in list & studied_today is True",
-        sc == 200 and sc_s == 200 and has_test_session and after_streak.get("studied_today") is True,
-        f"in_list: {has_test_session}, studied_today: {after_streak.get('studied_today') if after_streak else None}",
+        sc == 200 and sc_s == 200 and has_test_session and studied_now is True,
+        f"in_list: {has_test_session}, studied_today: {studied_now}",
     )
 
     # --- 7. GET /api/stats/weekly ---
@@ -175,7 +189,10 @@ def run_smoke_test(base_url: str) -> bool:
     sc, _, risk_data, _ = request(f"{base_url}/api/insights/streak-risk")
     check(
         "GET /api/insights/streak-risk returns probability & factors",
-        sc == 200 and risk_data and "probability_study_tomorrow" in risk_data and "risk_level" in risk_data,
+        sc == 200
+        and risk_data
+        and "probability_study_tomorrow" in risk_data
+        and "risk_level" in risk_data,
         f"status: {sc}",
     )
 
