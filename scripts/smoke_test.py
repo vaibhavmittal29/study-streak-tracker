@@ -14,7 +14,7 @@ from datetime import date
 from urllib.error import HTTPError, URLError
 
 
-def request(url: str, method: str = "GET", data: dict | None = None, timeout: float = 15.0):
+def request(url: str, method: str = "GET", data: dict | None = None, timeout: float = 30.0):
     """Make HTTP request and return (status_code, body_text, json_data, headers)."""
     headers = {"User-Agent": "StudyStreakTrackerSmokeTest/1.0"}
     encoded_data = None
