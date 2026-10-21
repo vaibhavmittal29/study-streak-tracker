@@ -349,6 +349,11 @@ study-streak-tracker/
 │   ├── seed.py                 # CLI database seeder (--reset, --days)
 │   └── evaluate_models.py      # Model benchmark evaluation script
 ├── data/                       # Local SQLite database directory (gitignored)
+├── Dockerfile                  # Production container specification (Python 3.11 slim)
+├── .dockerignore               # Docker ignore rules
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # GitHub Actions CI workflow (lint & test)
 ├── .env.example                # Example environment configuration
 ├── .gitignore                  # Git ignore rules
 ├── pyproject.toml              # Ruff & pytest configuration
@@ -360,7 +365,30 @@ study-streak-tracker/
 
 ---
 
-## 11. Future Work
+## 11. Deployment & Containerization
+
+### Docker Build & Run
+The repository includes a production-ready, non-root `Dockerfile`:
+
+```bash
+# Build Docker image
+docker build -t study-streak-tracker .
+
+# Run with persistent volume for SQLite database
+docker run -d -p 8000:8000 -v $(pwd)/data:/app/data --name study-tracker study-streak-tracker
+```
+
+### Production Hosting Notes
+- **Persistent Disk vs Ephemeral Storage:** Free cloud hosting tiers (e.g. Render, Railway, Fly.io) often utilize ephemeral filesystems where container restarts wipe local SQLite files. When deploying with SQLite, attach a persistent volume to `/app/data`.
+- **Swapping to Managed PostgreSQL:** For cloud environments without persistent disk attachments, simply configure the `DATABASE_URL` environment variable:
+  ```bash
+  DATABASE_URL=postgresql://user:password@host:5432/studydb
+  ```
+- **Zero Secrets in Git:** Never commit `.env` or production credentials.
+
+---
+
+## 12. Future Work
 - **Multi-User & Authentication:** Implement OAuth2 / JWT authentication with per-user data isolation.
 - **Alembic Migrations:** Add declarative migration scripts for evolving production database schemas.
 - **Strict Freeze Constraint:** Option to forbid back-to-back freeze consumption across Sunday/Monday week boundaries.
@@ -369,6 +397,6 @@ study-streak-tracker/
 
 ---
 
-## 12. License & Author
+## 13. License & Author
 
 Developed by **Vaibhav Mittal** (`vaibhavmittal29`) for the **Mozilla Firefox Club (VIT Vellore) AI/ML Subdomain** application. Released under the [MIT License](LICENSE).
