@@ -8,6 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.clock import get_clock
+from app.config import settings
 from app.database import get_db
 from app.models import StudySession
 from app.schemas import SessionCreate, SessionList, SessionOut, SessionUpdate
@@ -22,6 +23,18 @@ def create_session(
     today: date = Depends(get_clock),
 ) -> StudySession:
     """Log a new study session with calendar validation."""
+    # Enforce demo capacity cap if operating in demo mode
+    if settings.DEMO_MODE:
+        total_sessions = db.query(func.count(StudySession.id)).scalar()
+        if total_sessions >= settings.DEMO_MAX_SESSIONS:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=(
+                    f"Demo instance session limit reached ({settings.DEMO_MAX_SESSIONS} max). "
+                    "Please reset demo data or delete old sessions."
+                ),
+            )
+
     if payload.date > today:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

@@ -8,6 +8,31 @@
   <script src="/static/vendor/chart.umd.min.js"></script>
 </head>
 <body>
+  <!-- Cold Start Server Waking Indicator -->
+  <div id="cold-start-banner" class="cold-start-banner" style="display:none;" role="status">
+    <div class="container cold-start-inner">
+      <span class="spinner"></span>
+      <span>Waking up the demo server (free hosting, ~30–60 s)… thank you for your patience!</span>
+    </div>
+  </div>
+
+  <!-- Demo Mode Public Instance Banner -->
+  <div id="demo-banner" class="demo-banner" style="display:none;" role="region" aria-label="Demo notice">
+    <div class="container demo-banner-inner">
+      <div class="demo-banner-text">
+        <span class="demo-pill">DEMO INSTANCE</span>
+        <span>Live demo: shared public instance. Data resets when the server restarts. Please don't enter personal information.</span>
+      </div>
+      <button id="demo-reset-btn" class="btn btn-secondary btn-xs demo-reset-btn" title="Reset to initial 120-day synthetic dataset">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"/>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+        </svg>
+        Reset Demo Data
+      </button>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container" role="status" aria-live="polite"></div>
 

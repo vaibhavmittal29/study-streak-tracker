@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = "sqlite:///./data/study.db"
     DEFAULT_TIMEZONE: str = "Asia/Kolkata"
+    DEMO_MODE: bool = False
+    DEMO_MAX_SESSIONS: int = 1000
 
     model_config = SettingsConfigDict(
         env_file=".env",

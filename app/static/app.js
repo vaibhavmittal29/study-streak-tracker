@@ -20,27 +20,55 @@ const state = {
   sessionToDeleteId: null,
 };
 
+let firstRequestDone = false;
+
 // --- API Client ---
 async function api(path, options = {}) {
+  // Cold-start timer detection for free-tier hosting
+  let coldStartTimer = null;
+  if (!firstRequestDone) {
+    coldStartTimer = setTimeout(() => {
+      const banner = document.getElementById("cold-start-banner");
+      if (banner && !firstRequestDone) banner.style.display = "block";
+    }, 2000);
+  }
+
   const url = path.startsWith("/api") ? path : `/api${path}`;
-  const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    ...options,
-  });
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+      ...options,
+    });
 
-  if (response.status === 204) {
-    return null;
-  }
+    if (!firstRequestDone) {
+      firstRequestDone = true;
+      if (coldStartTimer) clearTimeout(coldStartTimer);
+      const banner = document.getElementById("cold-start-banner");
+      if (banner) banner.style.display = "none";
+    }
 
-  const data = await response.json().catch(() => null);
-  if (!response.ok) {
-    const errorMsg = data && data.detail ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail)) : "Request failed";
-    throw new Error(errorMsg);
+    if (response.status === 204) {
+      return null;
+    }
+
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      const errorMsg = data && data.detail ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail)) : "Request failed";
+      throw new Error(errorMsg);
+    }
+    return data;
+  } catch (err) {
+    if (!firstRequestDone) {
+      firstRequestDone = true;
+      if (coldStartTimer) clearTimeout(coldStartTimer);
+      const banner = document.getElementById("cold-start-banner");
+      if (banner) banner.style.display = "none";
+    }
+    throw err;
   }
-  return data;
 }
 
 // --- Toast System ---
@@ -685,11 +713,41 @@ async function openSettingsModal() {
   }
 }
 
+async function fetchDemoStatus() {
+  try {
+    const data = await api("/demo/status");
+    if (data && data.demo_mode) {
+      const banner = document.getElementById("demo-banner");
+      if (banner) banner.style.display = "block";
+    }
+  } catch {
+    // If endpoint fails or non-demo, banner remains hidden
+  }
+}
+
 // --- Event Wiring ---
 
 document.addEventListener("DOMContentLoaded", () => {
   // Initial load
+  fetchDemoStatus();
   fetchSettings().then(() => refreshAll());
+
+  // Demo reset button
+  const demoResetBtn = document.getElementById("demo-reset-btn");
+  if (demoResetBtn) {
+    demoResetBtn.onclick = async () => {
+      demoResetBtn.disabled = true;
+      try {
+        await api("/demo/reset", { method: "POST" });
+        showToast("Demo data reset to fresh 120-day state!", "success");
+        await refreshAll();
+      } catch (err) {
+        showToast(err.message, "error");
+      } finally {
+        demoResetBtn.disabled = false;
+      }
+    };
+  }
 
   // 1. Session Form Submit
   const sessionForm = document.getElementById("session-form");

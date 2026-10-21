@@ -1,14 +1,13 @@
 """7-day study time forecasting with rolling-origin candidate backtesting."""
 
 from datetime import date, timedelta
+from typing import TYPE_CHECKING
 
-import numpy as np
-import pandas as pd
-from sklearn.linear_model import Ridge
-from sklearn.metrics import mean_absolute_error
+if TYPE_CHECKING:
+    import pandas as pd
 
 
-def seasonal_naive_forecast(series: pd.Series, horizon: int = 7) -> list[float]:
+def seasonal_naive_forecast(series: "pd.Series", horizon: int = 7) -> list[float]:
     """Seasonal naive: predict identical weekday from 7 days ago."""
     if len(series) < 7:
         avg = float(series.mean()) if not series.empty else 60.0
@@ -16,7 +15,7 @@ def seasonal_naive_forecast(series: pd.Series, horizon: int = 7) -> list[float]:
     return [float(max(0.0, series.iloc[-7 + (i % 7)])) for i in range(horizon)]
 
 
-def weekday_mean_forecast(df: pd.DataFrame, horizon: int = 7) -> list[float]:
+def weekday_mean_forecast(df: "pd.DataFrame", horizon: int = 7) -> list[float]:
     """Weekday mean: average minutes on that specific day-of-week over recent history."""
     if df.empty:
         return [60.0] * horizon
@@ -38,7 +37,7 @@ def weekday_mean_forecast(df: pd.DataFrame, horizon: int = 7) -> list[float]:
     return preds
 
 
-def ewma_weekday_forecast(df: pd.DataFrame, horizon: int = 7) -> list[float]:
+def ewma_weekday_forecast(df: "pd.DataFrame", horizon: int = 7) -> list[float]:
     """EWMA level adjusted by empirical weekday multiplicative factors."""
     if len(df) < 7:
         return weekday_mean_forecast(df, horizon)
@@ -61,8 +60,12 @@ def ewma_weekday_forecast(df: pd.DataFrame, horizon: int = 7) -> list[float]:
     return preds
 
 
-def ridge_lag_forecast(df: pd.DataFrame, horizon: int = 7) -> list[float]:
+def ridge_lag_forecast(df: "pd.DataFrame", horizon: int = 7) -> list[float]:
     """Autoregressive Ridge model on lag and rolling features."""
+    import numpy as np
+    import pandas as pd
+    from sklearn.linear_model import Ridge
+
     if len(df) < 28:
         return weekday_mean_forecast(df, horizon)
 
@@ -98,11 +101,14 @@ def ridge_lag_forecast(df: pd.DataFrame, horizon: int = 7) -> list[float]:
     return preds
 
 
-def backtest_candidates(df: pd.DataFrame) -> tuple[str, float, float]:
+def backtest_candidates(df: "pd.DataFrame") -> tuple[str, float, float]:
     """Run rolling-origin backtest on the last ~28 days to pick best model by MAE.
 
     Returns: (best_candidate_name, best_mae, baseline_naive_mae)
     """
+    import numpy as np
+    from sklearn.metrics import mean_absolute_error
+
     if "day_of_week" not in df.columns and "date" in df.columns:
         df = df.copy()
         df["day_of_week"] = df["date"].apply(lambda d: d.weekday())
@@ -147,7 +153,7 @@ def backtest_candidates(df: pd.DataFrame) -> tuple[str, float, float]:
     return (best_name, round(best_mae, 1), round(mae_naive, 1))
 
 
-def predict_forecast(df: pd.DataFrame, today: date) -> dict:
+def predict_forecast(df: "pd.DataFrame", today: date) -> dict:
     """Generate 7-day study minutes forecast using the backtest-winning model."""
     data_days = len(df)
 

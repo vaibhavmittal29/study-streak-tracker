@@ -83,6 +83,70 @@ body {
   padding: 0 1.25rem;
 }
 
+/* Demo & Cold Start Banners */
+.cold-start-banner {
+  background-color: #1E293B;
+  color: #F8FAFC;
+  padding: 0.5rem 0;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid #334155;
+}
+
+.cold-start-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.spinner {
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.demo-banner {
+  background-color: rgba(37, 99, 235, 0.08);
+  border-bottom: 1px solid rgba(37, 99, 235, 0.2);
+  padding: 0.45rem 0;
+  font-size: 0.8125rem;
+}
+
+.demo-banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.demo-banner-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.demo-pill {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+}
+
+.demo-reset-btn {
+  font-weight: 600;
+}
+
 /* Header */
 .header {
   background-color: var(--color-card);

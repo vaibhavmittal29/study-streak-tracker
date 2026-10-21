@@ -1,23 +1,25 @@
 """Leakage-safe feature engineering pipeline for time-series study patterns."""
 
 from datetime import date, timedelta
-
-import numpy as np
-import pandas as pd
+from typing import TYPE_CHECKING
 
 from app.services.streak_engine import compute_streaks
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 def build_daily_frame(
     sessions: list,
     start_date: date,
     end_date: date,
-) -> pd.DataFrame:
+) -> "pd.DataFrame":
     """Build a zero-filled, chronologically ordered daily DataFrame.
 
     Each row corresponds to one calendar day with aggregated study minutes,
     session count, and a binary indicator whether study occurred.
     """
+    import pandas as pd
     if start_date > end_date:
         raise ValueError(f"start_date ({start_date}) cannot be after end_date ({end_date})")
 
@@ -53,13 +55,15 @@ def build_daily_frame(
 
 
 def make_features(
-    df: pd.DataFrame,
+    df: "pd.DataFrame",
     freeze_enabled: bool = True,
-) -> pd.DataFrame:
+) -> "pd.DataFrame":
     """Extract causal features using strictly past and current information (no leakage).
 
     Features generated for day t only depend on information available on or before day t.
     """
+    import numpy as np
+
     if df.empty:
         return df
 

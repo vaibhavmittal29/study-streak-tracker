@@ -2,14 +2,11 @@
 
 from dataclasses import dataclass
 from datetime import date
+from typing import TYPE_CHECKING
 
-import numpy as np
-import pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, brier_score_loss, f1_score
-from sklearn.model_selection import TimeSeriesSplit
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
 
 FEATURE_COLS = [
     "is_weekend",
@@ -49,8 +46,14 @@ class RiskEvaluation:
     baseline_persistence_acc: float
 
 
-def evaluate_classifier_chronological(X: pd.DataFrame, y: pd.Series) -> RiskEvaluation:
+def evaluate_classifier_chronological(X: "pd.DataFrame", y: "pd.Series") -> RiskEvaluation:
     """Perform leak-free chronological backtesting with TimeSeriesSplit."""
+    import numpy as np
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import accuracy_score, brier_score_loss, f1_score
+    from sklearn.model_selection import TimeSeriesSplit
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
     n_splits = min(4, max(2, len(X) // 10))
     tscv = TimeSeriesSplit(n_splits=n_splits)
 
@@ -96,9 +99,11 @@ def evaluate_classifier_chronological(X: pd.DataFrame, y: pd.Series) -> RiskEval
 
 
 def explain_top_factors(
-    weights: np.ndarray, feature_names: list[str], latest_row: pd.Series
+    weights: "np.ndarray", feature_names: list[str], latest_row: "pd.Series"
 ) -> list[str]:
     """Translate top 3 standardized logistic regression coefficients into plain English."""
+    import numpy as np
+
     order = np.argsort(np.abs(weights))[::-1]
     explanations = []
 
@@ -126,8 +131,10 @@ def explain_top_factors(
     return explanations
 
 
-def compute_fallback_probability(features_df: pd.DataFrame, tomorrow_weekday: int) -> float:
+def compute_fallback_probability(features_df: "pd.DataFrame", tomorrow_weekday: int) -> float:
     """Bayesian smoothed day-of-week empirical study frequency."""
+    import numpy as np
+
     if features_df.empty:
         return 0.50
 
@@ -147,8 +154,13 @@ def compute_fallback_probability(features_df: pd.DataFrame, tomorrow_weekday: in
     return round(float(np.clip(prob, 0.05, 0.95)), 2)
 
 
-def predict_streak_risk(features_df: pd.DataFrame, today: date) -> dict:
+def predict_streak_risk(features_df: "pd.DataFrame", today: date) -> dict:
     """Predict the probability that the user studies tomorrow."""
+    import numpy as np
+    import pandas as pd
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.preprocessing import StandardScaler
+
     data_days = len(features_df)
     tomorrow_weekday = (today.weekday() + 1) % 7
 

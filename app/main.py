@@ -13,8 +13,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.config import settings
 from app.database import Base, engine
 from app.routers import (
+    demo,
     export,
     goals,
     insights,
@@ -34,8 +36,20 @@ logger = logging.getLogger("study_tracker")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Perform startup tasks: initialize database tables."""
+    """Perform startup tasks: initialize database tables and auto-seed demo data if enabled."""
     Base.metadata.create_all(bind=engine)
+
+    if settings.DEMO_MODE:
+        from app.clock import get_today
+        from app.database import SessionLocal
+        from app.services.demo_seeder import seed_demo_data
+
+        db = SessionLocal()
+        try:
+            seed_demo_data(db, today=get_today(settings.DEFAULT_TIMEZONE), reset=False)
+        finally:
+            db.close()
+
     yield
 
 
@@ -56,6 +70,7 @@ app.include_router(settings_router.router)
 app.include_router(goals.router)
 app.include_router(export.router)
 app.include_router(insights.router)
+app.include_router(demo.router)
 
 
 @app.exception_handler(Exception)
