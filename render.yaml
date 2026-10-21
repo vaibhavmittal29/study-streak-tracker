@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: study-streak-tracker
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: DEMO_MODE
+        value: "true"
+      - key: DEFAULT_TIMEZONE
+        value: Asia/Kolkata
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: DATABASE_URL
+        value: sqlite:///./data/study.db
+      - key: DEMO_MAX_SESSIONS
+        value: "1000"
