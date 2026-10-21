@@ -1,8 +1,46 @@
 # Study Streak Tracker
 
-A focused, single-user study tracker and habit analytics platform engineered with a FastAPI REST backend, an interactive single-page dashboard (Vanilla JS + offline vendored Chart.js), and an **AI/ML insights engine** for habit forecasting and streak risk mitigation.
+> A lightweight, zero-latency study habit tracker and AI/ML behavioral analytics engine built with FastAPI, SQLite, Vanilla JS, and scikit-learn.
 
-Designed and built for the **Mozilla Firefox Club (VIT Vellore) recruitments — AI/ML Subdomain**.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render%20Free%20Service-brightgreen?style=for-the-badge&logo=render)](https://study-streak-tracker-wp0r.onrender.com)
+[![API Docs](https://img.shields.io/badge/OpenAPI%20Docs-Interactive%20Swagger-blue?style=for-the-badge&logo=fastapi)](https://study-streak-tracker-wp0r.onrender.com/docs)
+[![CI Tests](https://img.shields.io/github/actions/workflow/status/vaibhavmittal29/study-streak-tracker/ci.yml?branch=main&style=for-the-badge&label=Tests%20Passing)](https://github.com/vaibhavmittal29/study-streak-tracker/actions)
+[![Coverage](https://img.shields.io/badge/Coverage-96%25-success?style=for-the-badge)](https://github.com/vaibhavmittal29/study-streak-tracker)
+
+**Live Deployed Application:** **[https://study-streak-tracker-wp0r.onrender.com](https://study-streak-tracker-wp0r.onrender.com)**  
+**Interactive API Documentation:** **[https://study-streak-tracker-wp0r.onrender.com/docs](https://study-streak-tracker-wp0r.onrender.com/docs)**
+
+> [!NOTE]
+> **Hosted on Render Free Tier:** The web service spins down after 15 minutes of inactivity. The first load after idle may take **~30–60 seconds** (measured warm response: **1.2 s**; cold-start wake-up: **~35 s**). Demo data is automatically seeded upon empty startup and resets on server reboot; click the **"Reset demo data"** button in the header if it ever appears blank.
+
+---
+
+## ⚡ 60-Second Evaluator Tour
+
+Experience the core functionality and AI/ML capabilities in one minute:
+
+1. **Inspect Pre-filled Streak Metrics:** Notice the current streak of consecutive days, the historical longest streak, the active freeze indicator (1 freeze allowed per ISO week), and the *"Streak at risk today"* badge warning you to study.
+2. **Log a Study Session for Today:** Enter Subject (e.g. `Machine Learning`), Duration (e.g. `60`), and click **Log Session**. Notice how the current streak increments, *"Studied today"* turns green, weekly totals update, and goal bars advance.
+3. **Edit & Delete Session (Recompute Streak):** In the Recent Sessions table, edit the session's date to yesterday (or click Delete). Watch the streak engine immediately recompute historical contiguous blocks and restore the previous state without refresh.
+4. **Toggle Chart Time Horizon:** In the study volume chart, switch between **Day** and **Week** view, and toggle between 7-day, 30-day, and 90-day historical time windows.
+5. **Explore AI/ML Insights:** Scroll to the AI Insights section to view:
+   - **7-Day Study Time Forecast:** The model with the lowest historical backtested MAE (Ridge regression vs. Weekday Mean / EWMA) predicting upcoming daily minutes.
+   - **Next-Day Streak Risk Classifier:** `LogisticRegression` probability estimate of studying tomorrow, with top 3 explainable behavioral driver weights.
+   - **Actionable Study Recommendations:** Rules alerting you to neglected subjects, pacing adjustments, and peak productivity days.
+6. **Download CSV Export:** Click **Export CSV** in the top-right header to verify RFC 4180 compliance and spreadsheet formula injection protection.
+7. **Test OpenAPI Docs:** Navigate to **[/docs](https://study-streak-tracker-wp0r.onrender.com/docs)** to test the REST endpoints with live Swagger UI.
+
+---
+
+## 📸 Screenshots
+
+| Desktop Dashboard | Mobile Experience |
+|:---:|:---:|
+| ![Desktop Dashboard](docs/screenshots/dashboard-desktop.png) | ![Mobile Experience](docs/screenshots/dashboard-mobile.png) |
+
+| AI/ML Insights & Forecasting Engine |
+|:---:|
+| ![AI Insights Card](docs/screenshots/insights-card.png) |
 
 ---
 
@@ -365,7 +403,48 @@ study-streak-tracker/
 
 ---
 
-## 11. Deployment & Containerization
+## 11. Deployment & Cloud Architecture
+
+### Public Live Demo (Render)
+The application is deployed as a free cloud web service on **Render** using an automated Infrastructure-as-Code Blueprint ([`render.yaml`](render.yaml)):
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/vaibhavmittal29/study-streak-tracker)
+
+- **Platform:** Render Free Web Service (Python 3.11 runtime, 512 MB RAM, 0.5 shared vCPU).
+- **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+- **Health Check Endpoint:** `/api/health` (< 50 ms response time).
+- **Ephemeral Storage Trade-off:** Render's free tier uses an ephemeral filesystem where local disk storage resets on restarts, deploys, and idle spin-downs. In production with paid cloud instances, attach a persistent disk to `/app/data` or configure managed PostgreSQL via `DATABASE_URL`.
+- **DEMO_MODE Behavior:** When `DEMO_MODE=true` (configured in `render.yaml`):
+  - **Deterministic Auto-seeding:** If the database is empty on boot, it automatically generates 120 days of realistic student history ending *yesterday* relative to the server clock (seed=42).
+  - **Public Flood Protection:** Capped at 1,000 sessions with an explicit `HTTP 429 Too Many Requests` limit.
+  - **Live Reset Endpoint:** Provides an authenticated `POST /api/demo/reset` button in the UI for evaluators to re-seed demo data at any time.
+  - **Lazy ML Imports:** `pandas` and `scikit-learn` are imported lazily inside model execution rather than at server startup, slashing base boot memory from **110.5 MB down to 38.4 MB** (65% reduction), guaranteeing safe execution within Render's 512 MB limit.
+
+### Automated Smoke Test Script
+Verify live deployment health and end-to-end functionality using the standard-library smoke test suite:
+
+```bash
+# Test local instance
+python scripts/smoke_test.py http://127.0.0.1:8000
+
+# Test live production instance (cold-start tolerant up to 90 seconds)
+python scripts/smoke_test.py https://study-streak-tracker-wp0r.onrender.com
+```
+
+The script verifies 13 sequential checks:
+1. Cold-start health check (`/api/health`)
+2. Dashboard HTML delivery (`/`)
+3. Interactive Swagger documentation (`/docs`)
+4. Streak engine metrics shape (`/api/streak`)
+5. Session creation (`POST /api/sessions`)
+6. Session listing and `studied_today` verification
+7. ISO weekly subject aggregates (`/api/stats/weekly`)
+8. Daily and weekly goals progress (`/api/goals/progress`)
+9. Sanitized CSV export (`/api/export.csv`)
+10. 7-day study forecast (`/api/insights/forecast`)
+11. Logistic regression streak-risk classifier (`/api/insights/streak-risk`)
+12. Behavioral recommendations (`/api/insights/recommendations`)
+13. Clean-up session deletion (`DELETE /api/sessions/{id}`)
 
 ### Docker Build & Run
 The repository includes a production-ready, non-root `Dockerfile`:
