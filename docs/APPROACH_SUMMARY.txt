@@ -1,0 +1,98 @@
+STUDY STREAK TRACKER: SUMMARY OF APPROACH
+
+Repository: https://github.com/vaibhavmittal29/study-streak-tracker
+Live Demo: https://study-streak-tracker-wp0r.onrender.com
+
+When designing the Study Streak Tracker for my Mozilla Firefox Club recruitment submission, I examined how students maintain study habits and where existing tools fail. Most habit apps treat streaks as brittle database counters that increment on a click and reset to zero when life interferes. In college life, academic demands fluctuate. An unexpected lab, illness, or travel day disrupts an evening, and losing a long streak over a single missed day discourages learners. Furthermore, standard habit trackers treat all minutes identically, offering no context on whether someone is cramming or steadily practicing core subjects.
+
+My goal was to build a self-contained web app that models study behavior realistically. The system logs individual sessions with start times, durations, and subjects, recalculates streaks dynamically from timestamps rather than an unchecked counter, offers forgiveness through weekly streak freezes, tracks subject distributions against weekly goals, and delivers genuine local machine learning insights without relying on external cloud APIs.
+
+TECHNOLOGY CHOICES AND RATIONALE
+
+I evaluated several stacks before selecting Python with FastAPI, SQLite via SQLAlchemy, and vanilla JavaScript for the dashboard. I chose FastAPI because it provides asynchronous request handling, generates interactive OpenAPI documentation automatically, and enforces strict schema validation through Pydantic, preventing malformed payloads from reaching domain logic. I rejected Django because its administrative overhead, heavyweight migrations, and monolithic structure were unnecessary for a focused habit tracker. Flask was an option, but lacking native async handling and built-in type validation meant assembling multiple external libraries.
+
+For persistence, I selected SQLite through SQLAlchemy. It requires no external daemon, runs entirely in-process, and stores data in a compact local file, making evaluation effortless for reviewers. While PostgreSQL suits multi-tenant deployments, SQLite minimizes resource overhead for a single-user tracker.
+
+On the frontend, I avoided React, Vue, or Angular, choosing vanilla HTML5, modern CSS, and plain JavaScript. Component frameworks introduce bulky dependencies and build overhead. Plain JavaScript provides instant browser loading, zero build latency, and straightforward DOM manipulation. For machine learning, I chose scikit-learn, pandas, and numpy to run interpretable statistical models directly inside the application container.
+
+ARCHITECTURE AND DATA MODEL
+
+I structured the project using a layered architecture separating transport protocols, database persistence, domain logic, and predictive analytics across four layers: HTTP routing in app/routers, database models in app/models, core business logic in app/services, and machine learning routines in app/ml.
+
+The routing layer receives requests, deserializes inputs, and serializes responses using Pydantic schemas, delegating domain work to services. The persistence layer uses SQLAlchemy to define the StudySession and Goal models. A study session stores an integer identifier, subject, positive duration in minutes, timezone-aware UTC timestamp, optional note, and updated timestamp. The Goal model stores daily and weekly minute targets and a streak freeze toggle.
+
+To make time-dependent calculations reliable and testable, I implemented an injectable clock mechanism across the service layer. Rather than calling system time directly inside business logic, every time-sensitive function accepts an optional reference timestamp defaulting to the system clock. This allows unit tests to freeze time or step through calendar progressions without modifying system libraries.
+
+Validation rules are enforced at the schema boundary. Session durations must be positive integers not exceeding 1440 minutes, preventing entries exceeding twenty-four hours. Timestamps cannot be in the future beyond a two-minute clock skew allowance. Notes are sanitized and length-capped, and subjects are stripped of extraneous whitespace.
+
+THE STREAK ALGORITHM: CORE ENGINE AND WORKED EXAMPLE
+
+The streak engine in app/services/streak_engine.py is the core algorithmic component. Many trackers store a static counter in the database, but I rejected that design because retroactive edits, deletions, or backdated logs permanently corrupt stored counters. Instead, I built a pure recompute-on-read engine calculating streaks on demand directly from timestamped sessions, guaranteeing mathematical consistency.
+
+The engine converts stored UTC timestamps into the user's timezone (Asia/Kolkata) and groups sessions by calendar date. To qualify as an active day, cumulative study duration must reach thirty minutes. Multiple short sessions combine into an active day, while brief check-ins are excluded.
+
+The engine handles the current day through a today-pending rule. If a student has not studied today, their streak does not break; today remains pending until midnight. The streak reflects consecutive qualifying days ending yesterday, displaying an at-risk status until thirty minutes are logged today.
+
+Streak freezes permit at most one missed calendar day per ISO week (Monday to Sunday). When traversing history backward, if the engine encounters an unstudied day, it checks freeze availability for that ISO week. If available, the missed day is marked frozen, preserving streak continuity.
+
+Consider a student studying Monday and Tuesday, missing Wednesday, and studying Thursday. A naive tracker resets on Wednesday. My engine finds an available freeze in that ISO week, marking Wednesday frozen so Thursday yields a four-day streak. Missing Friday breaks the streak because the weekly freeze is exhausted.
+
+Recomputing on read scales linearly with session count. For personal tracking with thousands of sessions, traversal takes under two milliseconds, eliminating synchronization bugs.
+
+ADDITIONAL FEATURES: STATISTICS, GOALS, CHARTS, AND SAFE EXPORT
+
+Beyond streak counting, the application provides an analytical suite giving students clear visibility into their study habits. The analytics service aggregates subject study duration weekly and all-time, computing total hours, daily averages, target completion rates, and longest streak.
+
+The dashboard displays these metrics alongside a custom HTML5 canvas and SVG time-series chart plotting study volume over fourteen and thirty-day windows. The chart distinguishes regular, frozen, and target-met days without external charting libraries.
+
+Data portability is essential, so I added full CSV export and import functionality. Users can export their complete history with one click. When generating CSV files from user inputs, there is a known vulnerability called CSV formula injection. If an input begins with equals, plus, minus, or at signs, spreadsheet software can execute the cell as an active formula. My export service inspects text fields and prepends an apostrophe to trigger characters, forcing spreadsheets to treat them as plain text.
+
+The dashboard also allows users to configure daily and weekly goals dynamically, instantly updating progress bars to show remaining minutes for the active cycle.
+
+THE AI/ML APPROACH: FRAMING, BASELINES, AND RESULTS
+
+For machine learning, I rejected external generative text APIs for generic advice, framing two localized predictive problems on behavioral data: estimating streak breakage risk over the next twenty-four hours, and forecasting daily study minutes for the upcoming week.
+
+Personal habit data involves small sample sizes of tens to hundreds of days. Deep neural networks quickly overfit small tabular time-series, memorizing dates rather than behavioral patterns. Therefore, I selected simple, interpretable statistical models.
+
+For streak-risk classification, I built a standardized logistic regression model with balanced class weights using seven features: current streak, forty-eight-hour duration, seven-day completion ratio, day-of-week sine and cosine encodings, days since last session, and freeze availability. Chronological time-series validation prevents data leakage across prediction horizons.
+
+Evaluated across 120 days of student history against majority-class and persistence baselines, logistic regression achieved 61.5 percent accuracy, an F1-score of 0.729, and a Brier score of 0.264. Although the majority baseline scored 64.8 percent accuracy by predicting study every day, its calibration was uninformative. The persistence baseline achieved 56.6 percent accuracy. Calibrated probabilities trigger dashboard warnings when risk exceeds sixty percent.
+
+For forecasting study time, an ensemble combining empirical weekday averages with an Exponentially Weighted Moving Average captured routines and momentum. Evaluated against a seasonal naive baseline (MAE 66.6 minutes), the ensemble achieved an MAE of 48.1 minutes, a 27.8 percent error reduction.
+
+Under cold-start conditions with under twenty-one days of history, the system falls back to an Empirical Bayesian smoothed prior. An NLP utility in app/ml/nlp.py uses difflib and abbreviation dictionaries to suggest canonical subject names when users type variants like chem instead of Chemistry.
+
+TESTING AND QUALITY ASSURANCE
+
+Reliability in a habit tracker depends on thorough edge-case testing around calendar boundaries and date arithmetic. I wrote an automated test suite with pytest, containing sixty-eight tests achieving ninety-five percent overall code coverage across the application and one hundred percent branch coverage across the streak engine in app/services/streak_engine.py.
+
+Because service functions accept an injectable reference clock, I tested temporal edge cases deterministically without patching system time. Dedicated streak engine test cases verify:
+- Single and multi-session days meeting or missing thirty minutes.
+- Midweek missed days protected by an available freeze.
+- Multiple missed days in one week where the second breaks the streak.
+- Missed days spanning an ISO week boundary from Sunday to Monday.
+- Midnight transitions logged at 23:59 and 00:01 in local time.
+- Leap day transitions across February 28, February 29, and March 1.
+- Historical session editing and deletion dynamically recomputing streaks.
+- Timezone conversions mapping UTC timestamps accurately to local dates.
+
+To test algorithmic correctness beyond handcrafted scenarios, I built a randomized simulator test generating hundreds of random study patterns, running them through the production engine and a reference implementation to confirm identical results. I also enforced formatting and typing standards with Ruff and mypy.
+
+DEPLOYMENT AND DEMO ARCHITECTURE
+
+I deployed the live public demo on Render's free web tier using an infrastructure-as-code specification in render.yaml. Free hosting introduces strict resource constraints: 512 megabytes of RAM and an ephemeral filesystem that wipes SQLite data whenever the container restarts or spins down from inactivity after fifteen minutes.
+
+To prevent out-of-memory crashes, I optimized memory consumption. Importing scikit-learn and pandas at application startup initially consumed over 110 megabytes. Refactoring the codebase to import machine learning libraries lazily inside background analysis routines reduced initial container memory to 38.4 megabytes.
+
+To handle ephemeral storage, I built an automated demo mode. On startup, if the database is empty, it seeds a deterministic 120-day study history ending today so evaluators immediately see rich statistics and trained models. The dashboard displays a demo banner informing users of the shared environment, alongside a reset button that restores baseline data on demand.
+
+DEVELOPMENT PROCESS, CHALLENGES, AND TRADE-OFFS
+
+I developed this project systematically, writing a phased specification covering schema design, algorithms, and evaluation metrics before writing code. To accelerate implementation, I used Antigravity, an agentic AI coding assistant developed by Google DeepMind. Antigravity acted as a pair programmer, scaffolding endpoints, test structures, and syntax. My role was architect, supervisor, and quality gatekeeper: designing algorithms, reviewing code, catching edge-case omissions, and debugging.
+
+The hardest challenge was implementing the streak freeze across ISO week boundaries. Initially, the freeze logic checked whether a freeze occurred in the trailing seven days. This rolling window caused anomalies: a student who used a freeze on Sunday was blocked from using a freeze on Monday, even though Monday began a new academic week. Refactoring the freeze tracker to align with ISO calendar weeks resolved this bug, while requiring careful handling of year-end boundary transitions. Another challenge was debugging timezone localization around midnight boundaries to ensure UTC sessions resolve to the correct local calendar day.
+
+FUTURE IMPROVEMENTS
+
+Looking ahead, there are several realistic enhancements I plan to introduce. The most important is multi-user authentication with password hashing and JWT sessions, allowing students to maintain private streaks independently. I also plan database schema migrations using Alembic to support safe structural updates without resetting data. Finally, tracking session times of day would enable circadian study recommendations, identifying students' most productive study hours from historical focus patterns.

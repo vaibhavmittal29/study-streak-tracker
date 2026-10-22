@@ -8,7 +8,8 @@
 [![Coverage](https://img.shields.io/badge/Coverage-96%25-success?style=for-the-badge)](https://github.com/vaibhavmittal29/study-streak-tracker)
 
 **Live Deployed Application:** **[https://study-streak-tracker-wp0r.onrender.com](https://study-streak-tracker-wp0r.onrender.com)**  
-**Interactive API Documentation:** **[https://study-streak-tracker-wp0r.onrender.com/docs](https://study-streak-tracker-wp0r.onrender.com/docs)**
+**Interactive API Documentation:** **[https://study-streak-tracker-wp0r.onrender.com/docs](https://study-streak-tracker-wp0r.onrender.com/docs)**  
+**Written Summary of Approach:** **[docs/APPROACH_SUMMARY.md](docs/APPROACH_SUMMARY.md)** ([Plain Text Form](docs/APPROACH_SUMMARY.txt))
 
 > [!NOTE]
 > **Hosted on Render Free Tier:** The web service spins down after 15 minutes of inactivity. The first load after idle may take **~30–60 seconds** (measured warm response: **1.2 s**; cold-start wake-up: **~35 s**). Demo data is automatically seeded upon empty startup and resets on server reboot; click the **"Reset demo data"** button in the header if it ever appears blank.
