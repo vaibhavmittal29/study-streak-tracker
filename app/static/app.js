@@ -511,16 +511,25 @@ async function fetchInsights() {
   }
 
   try {
-    const [risk, forecast, recs] = await Promise.all([
+    const [riskRes, forecastRes, recsRes] = await Promise.allSettled([
       api("/insights/streak-risk"),
       api("/insights/forecast"),
       api("/insights/recommendations"),
     ]);
 
-    if (badge && risk) {
-      const conf = (risk.confidence || "ready").toUpperCase();
-      badge.textContent = `${conf} CONFIDENCE (${risk.data_days || 0}d data)`;
-      badge.className = `badge ${risk.confidence === "high" ? "badge-accent" : (risk.confidence === "medium" ? "badge" : "badge-warning")}`;
+    const risk = riskRes.status === "fulfilled" ? riskRes.value : null;
+    const forecast = forecastRes.status === "fulfilled" ? forecastRes.value : null;
+    const recs = recsRes.status === "fulfilled" ? recsRes.value : null;
+
+    if (!risk && !forecast && !recs) {
+      throw new Error("Unable to load insights");
+    }
+
+    if (badge) {
+      const conf = (risk && risk.confidence ? risk.confidence : (forecast && forecast.confidence ? forecast.confidence : "active")).toUpperCase();
+      const days = (risk && risk.data_days !== undefined ? risk.data_days : (forecast && forecast.data_days !== undefined ? forecast.data_days : 0));
+      badge.textContent = `${conf} CONFIDENCE (${days}d data)`;
+      badge.className = `badge ${conf === "HIGH" ? "badge-accent" : (conf === "MEDIUM" ? "badge" : "badge-warning")}`;
     }
 
     renderInsights(risk, forecast, recs ? recs.recommendations : []);
@@ -548,116 +557,120 @@ function renderInsights(risk, forecast, recs) {
   grid.className = "insights-grid";
 
   // 1. Streak Risk Card
-  const riskBox = document.createElement("div");
-  riskBox.className = "insight-metric-box";
+  if (risk && risk.probability_study_tomorrow !== undefined) {
+    const riskBox = document.createElement("div");
+    riskBox.className = "insight-metric-box";
 
-  const riskHeader = document.createElement("div");
-  riskHeader.className = "insight-metric-header";
-  const riskTitle = document.createElement("span");
-  riskTitle.className = "insight-metric-title";
-  riskTitle.textContent = "Tomorrow's Study Probability";
-  riskHeader.appendChild(riskTitle);
+    const riskHeader = document.createElement("div");
+    riskHeader.className = "insight-metric-header";
+    const riskTitle = document.createElement("span");
+    riskTitle.className = "insight-metric-title";
+    riskTitle.textContent = "Tomorrow's Study Probability";
+    riskHeader.appendChild(riskTitle);
 
-  const probPercent = Math.round(risk.probability_study_tomorrow * 100);
-  const probWrap = document.createElement("div");
-  probWrap.className = "insight-prob-display";
-  const probVal = document.createElement("span");
-  probVal.className = "insight-prob-value";
-  probVal.textContent = `${probPercent}%`;
-  const riskBadge = document.createElement("span");
-  riskBadge.className = `badge ${risk.risk_level === "low" ? "badge-accent" : (risk.risk_level === "medium" ? "badge" : "badge-warning")}`;
-  riskBadge.textContent = `${risk.risk_level.toUpperCase()} RISK`;
-  probWrap.appendChild(probVal);
-  probWrap.appendChild(riskBadge);
+    const probPercent = Math.round(risk.probability_study_tomorrow * 100);
+    const probWrap = document.createElement("div");
+    probWrap.className = "insight-prob-display";
+    const probVal = document.createElement("span");
+    probVal.className = "insight-prob-value";
+    probVal.textContent = `${probPercent}%`;
+    const riskBadge = document.createElement("span");
+    const riskLvl = risk.risk_level || "low";
+    riskBadge.className = `badge ${riskLvl === "low" ? "badge-accent" : (riskLvl === "medium" ? "badge" : "badge-warning")}`;
+    riskBadge.textContent = `${riskLvl.toUpperCase()} RISK`;
+    probWrap.appendChild(probVal);
+    probWrap.appendChild(riskBadge);
 
-  const track = document.createElement("div");
-  track.className = "progress-track";
-  const fill = document.createElement("div");
-  fill.className = `progress-fill ${risk.risk_level === "low" ? "met" : ""}`;
-  fill.style.width = `${probPercent}%`;
-  track.appendChild(fill);
+    const track = document.createElement("div");
+    track.className = "progress-track";
+    const fill = document.createElement("div");
+    fill.className = `progress-fill ${riskLvl === "low" ? "met" : ""}`;
+    fill.style.width = `${probPercent}%`;
+    track.appendChild(fill);
 
-  const factorList = document.createElement("ul");
-  factorList.className = "factors-list";
-  risk.top_factors.forEach(f => {
-    const li = document.createElement("li");
-    li.className = "factor-item";
-    const dot = document.createElement("span");
-    dot.className = "factor-bullet";
-    dot.textContent = "•";
-    const text = document.createElement("span");
-    text.textContent = f;
-    li.appendChild(dot);
-    li.appendChild(text);
-    factorList.appendChild(li);
-  });
+    const factorList = document.createElement("ul");
+    factorList.className = "factors-list";
+    (risk.top_factors || []).forEach(f => {
+      const li = document.createElement("li");
+      li.className = "factor-item";
+      const dot = document.createElement("span");
+      dot.className = "factor-bullet";
+      dot.textContent = "•";
+      const text = document.createElement("span");
+      text.textContent = f;
+      li.appendChild(dot);
+      li.appendChild(text);
+      factorList.appendChild(li);
+    });
 
-  const modelNote = document.createElement("span");
-  modelNote.className = "subtext";
-  modelNote.style.fontSize = "0.7rem";
-  modelNote.textContent = `Model: ${risk.model_used}`;
+    const modelNote = document.createElement("span");
+    modelNote.className = "subtext";
+    modelNote.style.fontSize = "0.7rem";
+    modelNote.textContent = `Model: ${risk.model_used || "Logistic Regression"}`;
 
-  riskBox.appendChild(riskHeader);
-  riskBox.appendChild(probWrap);
-  riskBox.appendChild(track);
-  riskBox.appendChild(factorList);
-  riskBox.appendChild(modelNote);
-  grid.appendChild(riskBox);
+    riskBox.appendChild(riskHeader);
+    riskBox.appendChild(probWrap);
+    riskBox.appendChild(track);
+    riskBox.appendChild(factorList);
+    riskBox.appendChild(modelNote);
+    grid.appendChild(riskBox);
+  }
 
   // 2. 7-Day Forecast Card
-  const fcBox = document.createElement("div");
-  fcBox.className = "insight-metric-box";
+  if (forecast && forecast.days && forecast.days.length > 0) {
+    const fcBox = document.createElement("div");
+    fcBox.className = "insight-metric-box";
 
-  const fcHeader = document.createElement("div");
-  fcHeader.className = "insight-metric-header";
-  const fcTitle = document.createElement("span");
-  fcTitle.className = "insight-metric-title";
-  fcTitle.textContent = "7-Day Study Forecast";
-  fcHeader.appendChild(fcTitle);
+    const fcHeader = document.createElement("div");
+    fcHeader.className = "insight-metric-header";
+    const fcTitle = document.createElement("span");
+    fcTitle.className = "insight-metric-title";
+    fcTitle.textContent = "7-Day Study Forecast";
+    fcHeader.appendChild(fcTitle);
 
-  const fcTotalWrap = document.createElement("div");
-  fcTotalWrap.className = "insight-prob-display";
-  const fcTotalVal = document.createElement("span");
-  fcTotalVal.className = "insight-prob-value";
-  fcTotalVal.textContent = `~${forecast.weekly_total}`;
-  const fcUnit = document.createElement("span");
-  fcUnit.className = "unit";
-  fcUnit.textContent = "min next week";
-  fcTotalWrap.appendChild(fcTotalVal);
-  fcTotalWrap.appendChild(fcUnit);
+    const fcTotalWrap = document.createElement("div");
+    fcTotalWrap.className = "insight-prob-display";
+    const fcTotalVal = document.createElement("span");
+    fcTotalVal.className = "insight-prob-value";
+    fcTotalVal.textContent = `~${forecast.weekly_total || 0}`;
+    const fcUnit = document.createElement("span");
+    fcUnit.className = "unit";
+    fcUnit.textContent = "min next week";
+    fcTotalWrap.appendChild(fcTotalVal);
+    fcTotalWrap.appendChild(fcUnit);
 
-  // Sparkline bars
-  const days = (forecast && forecast.days && forecast.days.length) ? forecast.days : [];
-  const maxDay = days.length ? Math.max(...days.map(d => d.predicted_minutes || 0), 60) : 60;
-  const sparkline = document.createElement("div");
-  sparkline.className = "forecast-sparkline";
+    const days = forecast.days;
+    const maxDay = Math.max(...days.map(d => d.predicted_minutes || 0), 60);
+    const sparkline = document.createElement("div");
+    sparkline.className = "forecast-sparkline";
 
-  days.forEach(d => {
-    const col = document.createElement("div");
-    col.className = "forecast-day-bar";
-    const bar = document.createElement("div");
-    bar.className = "forecast-bar-fill";
-    bar.style.height = `${Math.max(4, (d.predicted_minutes / maxDay) * 100)}%`;
-    bar.title = `${d.date}: ${d.predicted_minutes}m`;
+    days.forEach(d => {
+      const col = document.createElement("div");
+      col.className = "forecast-day-bar";
+      const bar = document.createElement("div");
+      bar.className = "forecast-bar-fill";
+      bar.style.height = `${Math.max(4, ((d.predicted_minutes || 0) / maxDay) * 100)}%`;
+      bar.title = `${d.date}: ${d.predicted_minutes}m`;
 
-    const lbl = document.createElement("span");
-    lbl.className = "forecast-day-label";
-    lbl.textContent = d.date.slice(8); // day DD
-    col.appendChild(bar);
-    col.appendChild(lbl);
-    sparkline.appendChild(col);
-  });
+      const lbl = document.createElement("span");
+      lbl.className = "forecast-day-label";
+      lbl.textContent = d.date.slice(8);
+      col.appendChild(bar);
+      col.appendChild(lbl);
+      sparkline.appendChild(col);
+    });
 
-  const fcModelNote = document.createElement("span");
-  fcModelNote.className = "subtext";
-  fcModelNote.style.fontSize = "0.7rem";
-  fcModelNote.textContent = `Model: ${forecast.model_used}` + (forecast.backtest_mae > 0 ? ` (MAE: ${forecast.backtest_mae}m vs naive ${forecast.baseline_mae}m)` : "");
+    const fcModelNote = document.createElement("span");
+    fcModelNote.className = "subtext";
+    fcModelNote.style.fontSize = "0.7rem";
+    fcModelNote.textContent = `Model: ${forecast.model_used || "Time-Series"}` + (forecast.backtest_mae > 0 ? ` (MAE: ${forecast.backtest_mae}m vs naive ${forecast.baseline_mae}m)` : "");
 
-  fcBox.appendChild(fcHeader);
-  fcBox.appendChild(fcTotalWrap);
-  fcBox.appendChild(sparkline);
-  fcBox.appendChild(fcModelNote);
-  grid.appendChild(fcBox);
+    fcBox.appendChild(fcHeader);
+    fcBox.appendChild(fcTotalWrap);
+    fcBox.appendChild(sparkline);
+    fcBox.appendChild(fcModelNote);
+    grid.appendChild(fcBox);
+  }
 
   // 3. Explainable Recommendations List
   if (recs && recs.length > 0) {
@@ -687,18 +700,14 @@ function renderInsights(risk, forecast, recs) {
 }
 
 async function refreshAll() {
-  try {
-    await Promise.all([
-      fetchStreak(),
-      fetchGoals(),
-      fetchWeeklyStats(),
-      fetchChart(),
-      fetchSessions(false),
-      fetchInsights(),
-    ]);
-  } catch (err) {
-    showToast(err.message, "error");
-  }
+  await Promise.allSettled([
+    fetchStreak().catch(e => console.warn("Streak fetch failed:", e)),
+    fetchGoals().catch(e => console.warn("Goals fetch failed:", e)),
+    fetchWeeklyStats().catch(e => console.warn("Stats fetch failed:", e)),
+    fetchChart().catch(e => console.warn("Chart fetch failed:", e)),
+    fetchSessions(false).catch(e => console.warn("Sessions fetch failed:", e)),
+    fetchInsights().catch(e => console.warn("Insights fetch failed:", e)),
+  ]);
 }
 
 // --- Modals & Actions ---
@@ -748,9 +757,10 @@ async function fetchDemoStatus() {
 // --- Event Wiring ---
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Initial load
-  fetchDemoStatus();
-  fetchSettings().then(() => refreshAll());
+  // Initial load: start settings, demo status, and dashboard modules in parallel
+  fetchDemoStatus().catch(() => {});
+  fetchSettings().catch(() => {});
+  refreshAll();
 
   // Demo reset button
   const demoResetBtn = document.getElementById("demo-reset-btn");

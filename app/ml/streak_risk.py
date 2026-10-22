@@ -55,7 +55,7 @@ def evaluate_classifier_chronological(X: "pd.DataFrame", y: "pd.Series") -> Risk
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
 
-    n_splits = min(4, max(2, len(X) // 10))
+    n_splits = min(3, max(2, len(X) // 25))
     tscv = TimeSeriesSplit(n_splits=n_splits)
 
     accs, f1s, briers = [], [], []
@@ -68,7 +68,12 @@ def evaluate_classifier_chronological(X: "pd.DataFrame", y: "pd.Series") -> Risk
         if len(y_train.unique()) < 2 or len(y_test.unique()) < 1:
             continue
 
-        clf = Pipeline([("scaler", StandardScaler()), ("lr", LogisticRegression(max_iter=500))])
+        clf = Pipeline(
+            [
+                ("scaler", StandardScaler()),
+                ("lr", LogisticRegression(max_iter=200, random_state=42)),
+            ]
+        )
         clf.fit(X_train, y_train)
 
         preds = clf.predict(X_test)
@@ -204,7 +209,7 @@ def predict_streak_risk(features_df: "pd.DataFrame", today: date) -> dict:
 
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    clf = LogisticRegression(class_weight="balanced", max_iter=500, random_state=42)
+    clf = LogisticRegression(class_weight="balanced", max_iter=200, random_state=42)
     clf.fit(X_scaled, y)
 
     # Predict for tomorrow using latest available row (today)
