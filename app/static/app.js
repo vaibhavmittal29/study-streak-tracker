@@ -820,47 +820,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Phase 9.3b: NLP Subject Suggestion & Normalization
-  const subjectInput = document.getElementById("form-subject");
-  const suggestionBox = document.getElementById("subject-suggestion-box");
-  const suggestedNameEl = document.getElementById("suggested-subject-name");
-  const applySuggestionBtn = document.getElementById("apply-suggestion-btn");
-  let suggestionTimer = null;
-  let currentSuggestedSubject = "";
-
-  if (subjectInput && suggestionBox && suggestedNameEl && applySuggestionBtn) {
-    subjectInput.addEventListener("input", () => {
-      clearTimeout(suggestionTimer);
-      const val = subjectInput.value.trim();
-      if (val.length < 2) {
-        suggestionBox.style.display = "none";
-        return;
-      }
-      suggestionTimer = setTimeout(async () => {
-        try {
-          const res = await api(`/sessions/suggest-subject?query=${encodeURIComponent(val)}`);
-          if (res && res.suggestion && res.suggestion.toLowerCase() !== val.toLowerCase()) {
-            currentSuggestedSubject = res.suggestion;
-            suggestedNameEl.textContent = res.suggestion;
-            suggestionBox.style.display = "flex";
-          } else {
-            suggestionBox.style.display = "none";
-          }
-        } catch {
-          suggestionBox.style.display = "none";
-        }
-      }, 250);
-    });
-
-    applySuggestionBtn.addEventListener("click", () => {
-      if (currentSuggestedSubject) {
-        subjectInput.value = currentSuggestedSubject;
-        suggestionBox.style.display = "none";
-        subjectInput.focus();
-      }
-    });
-  }
-
   // 1. Session Form Submit
   const sessionForm = document.getElementById("session-form");
   const submitBtn = document.getElementById("submit-session-btn");
