@@ -498,6 +498,18 @@ async function fetchInsights() {
   const badge = document.getElementById("ml-confidence-badge");
   if (!container) return;
 
+  if (!container.querySelector(".insights-grid")) {
+    container.innerHTML = `
+      <div class="insights-loading">
+        <div class="spinner-small"></div>
+        <span class="subtext">Analyzing study patterns &amp; computing behavioral predictions...</span>
+      </div>`;
+    if (badge) {
+      badge.textContent = "AI Engine Active";
+      badge.className = "badge badge-accent";
+    }
+  }
+
   try {
     const [risk, forecast, recs] = await Promise.all([
       api("/insights/streak-risk"),
@@ -505,18 +517,25 @@ async function fetchInsights() {
       api("/insights/recommendations"),
     ]);
 
-    if (badge) {
-      badge.textContent = `${risk.confidence.toUpperCase()} CONFIDENCE (${risk.data_days}d data)`;
+    if (badge && risk) {
+      const conf = (risk.confidence || "ready").toUpperCase();
+      badge.textContent = `${conf} CONFIDENCE (${risk.data_days || 0}d data)`;
       badge.className = `badge ${risk.confidence === "high" ? "badge-accent" : (risk.confidence === "medium" ? "badge" : "badge-warning")}`;
     }
 
-    renderInsights(risk, forecast, recs.recommendations);
+    renderInsights(risk, forecast, recs ? recs.recommendations : []);
   } catch (err) {
-    container.innerHTML = "";
-    const p = document.createElement("p");
-    p.className = "subtext";
-    p.textContent = "Insights activating as study sessions are recorded.";
-    container.appendChild(p);
+    if (!container.querySelector(".insights-grid")) {
+      container.innerHTML = "";
+      const p = document.createElement("p");
+      p.className = "subtext";
+      p.textContent = "AI insights will refine as daily study sessions are recorded.";
+      container.appendChild(p);
+      if (badge) {
+        badge.textContent = "Cold-Start Prior";
+        badge.className = "badge badge-warning";
+      }
+    }
   }
 }
 
@@ -608,11 +627,12 @@ function renderInsights(risk, forecast, recs) {
   fcTotalWrap.appendChild(fcUnit);
 
   // Sparkline bars
-  const maxDay = Math.max(...forecast.days.map(d => d.predicted_minutes), 60);
+  const days = (forecast && forecast.days && forecast.days.length) ? forecast.days : [];
+  const maxDay = days.length ? Math.max(...days.map(d => d.predicted_minutes || 0), 60) : 60;
   const sparkline = document.createElement("div");
   sparkline.className = "forecast-sparkline";
 
-  forecast.days.forEach(d => {
+  days.forEach(d => {
     const col = document.createElement("div");
     col.className = "forecast-day-bar";
     const bar = document.createElement("div");
@@ -747,6 +767,88 @@ document.addEventListener("DOMContentLoaded", () => {
         demoResetBtn.disabled = false;
       }
     };
+  }
+
+  // Phase 9.3b: NLP Subject Suggestion & Normalization
+  const subjectInput = document.getElementById("form-subject");
+  const suggestionBox = document.getElementById("subject-suggestion-box");
+  const suggestedNameEl = document.getElementById("suggested-subject-name");
+  const applySuggestionBtn = document.getElementById("apply-suggestion-btn");
+  let suggestionTimer = null;
+  let currentSuggestedSubject = "";
+
+  if (subjectInput && suggestionBox && suggestedNameEl && applySuggestionBtn) {
+    subjectInput.addEventListener("input", () => {
+      clearTimeout(suggestionTimer);
+      const val = subjectInput.value.trim();
+      if (val.length < 2) {
+        suggestionBox.style.display = "none";
+        return;
+      }
+      suggestionTimer = setTimeout(async () => {
+        try {
+          const res = await api(`/sessions/suggest-subject?query=${encodeURIComponent(val)}`);
+          if (res && res.suggestion && res.suggestion.toLowerCase() !== val.toLowerCase()) {
+            currentSuggestedSubject = res.suggestion;
+            suggestedNameEl.textContent = res.suggestion;
+            suggestionBox.style.display = "flex";
+          } else {
+            suggestionBox.style.display = "none";
+          }
+        } catch {
+          suggestionBox.style.display = "none";
+        }
+      }, 250);
+    });
+
+    applySuggestionBtn.addEventListener("click", () => {
+      if (currentSuggestedSubject) {
+        subjectInput.value = currentSuggestedSubject;
+        suggestionBox.style.display = "none";
+        subjectInput.focus();
+      }
+    });
+  }
+
+  // Phase 9.3b: NLP Subject Suggestion & Normalization
+  const subjectInput = document.getElementById("form-subject");
+  const suggestionBox = document.getElementById("subject-suggestion-box");
+  const suggestedNameEl = document.getElementById("suggested-subject-name");
+  const applySuggestionBtn = document.getElementById("apply-suggestion-btn");
+  let suggestionTimer = null;
+  let currentSuggestedSubject = "";
+
+  if (subjectInput && suggestionBox && suggestedNameEl && applySuggestionBtn) {
+    subjectInput.addEventListener("input", () => {
+      clearTimeout(suggestionTimer);
+      const val = subjectInput.value.trim();
+      if (val.length < 2) {
+        suggestionBox.style.display = "none";
+        return;
+      }
+      suggestionTimer = setTimeout(async () => {
+        try {
+          const res = await api(`/sessions/suggest-subject?query=${encodeURIComponent(val)}`);
+          if (res && res.suggestion && res.suggestion.toLowerCase() !== val.toLowerCase()) {
+            currentSuggestedSubject = res.suggestion;
+            suggestedNameEl.textContent = res.suggestion;
+            suggestionBox.style.display = "flex";
+          } else {
+            suggestionBox.style.display = "none";
+          }
+        } catch {
+          suggestionBox.style.display = "none";
+        }
+      }, 250);
+    });
+
+    applySuggestionBtn.addEventListener("click", () => {
+      if (currentSuggestedSubject) {
+        subjectInput.value = currentSuggestedSubject;
+        suggestionBox.style.display = "none";
+        subjectInput.focus();
+      }
+    });
   }
 
   // 1. Session Form Submit

@@ -66,6 +66,7 @@ Experience the core functionality and AI/ML capabilities in one minute:
 - [x] **Explainable Feature Attribution:** Top 3 behavioral coefficients translated into plain English (e.g., *"Studied 6 of last 7 days (+)"*).
 - [x] **Empirical Bayesian Cold-Start Fallback:** Graceful fallback prior for accounts with < 21 days of history.
 - [x] **Actionable Rule-Based Recommendations:** Identifies neglected subjects ($\ge 5$ days unstudied), goal pace warnings, productivity peak weekdays, and 14-day consistency rates.
+- [x] **NLP Subject Normalization (Phase 9.3b):** Real-time acronym and fuzzy matching (`difflib`) suggesting existing subject names when logging sessions (e.g., typing *"dsa"* or *"cn"* suggests *"Data Structures"* or *"Computer Networks"*) without silent mutations.
 
 ---
 

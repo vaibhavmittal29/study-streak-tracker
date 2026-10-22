@@ -185,3 +185,25 @@ def test_insights_api_endpoints(client: TestClient, override_clock) -> None:
     recs_data = recs_res.json()
     assert "recommendations" in recs_data
     assert isinstance(recs_data["recommendations"], list)
+
+
+def test_subject_normalization_nlp() -> None:
+    """Verify Phase 9.3b NLP subject normalization suggestions."""
+    from app.ml.nlp import suggest_normalized_subject
+
+    existing = ["Data Structures & Algorithms", "Operating Systems", "Python Programming"]
+
+    # Acronym expansion
+    assert suggest_normalized_subject("dsa", existing) == "Data Structures & Algorithms"
+    assert suggest_normalized_subject("OS", existing) == "Operating Systems"
+
+    # Typo / fuzzy matching
+    assert suggest_normalized_subject("Pythn Programming", existing) == "Python Programming"
+
+    # Exact match should return None (already normalized)
+    assert suggest_normalized_subject("Operating Systems", existing) is None
+    assert suggest_normalized_subject("operating systems", existing) is None
+
+    # Empty or un-matched should return None
+    assert suggest_normalized_subject("", existing) is None
+    assert suggest_normalized_subject("Quantum Physics", existing) is None

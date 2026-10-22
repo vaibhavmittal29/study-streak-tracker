@@ -979,3 +979,42 @@ input:focus {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Phase 9.3b NLP Subject Suggestion & AI Loading */
+.subject-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background-color: var(--color-muted-bg);
+  border: 1px dashed var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  margin-top: 0.35rem;
+  animation: slideIn 150ms ease;
+}
+
+.btn-xs {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: var(--radius-sm);
+}
+
+.insights-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.spinner-small {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid var(--color-card-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}

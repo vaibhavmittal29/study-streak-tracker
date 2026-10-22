@@ -16,6 +16,19 @@ from app.schemas import SessionCreate, SessionList, SessionOut, SessionUpdate
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
 
+@router.get("/suggest-subject")
+def suggest_subject(
+    query: Annotated[str, Query(min_length=1, max_length=100)],
+    db: Session = Depends(get_db),
+) -> dict[str, str | None]:
+    """Suggest an existing subject for normalization using difflib/acronym (Phase 9.3b)."""
+    from app.ml.nlp import suggest_normalized_subject
+
+    existing = [row[0] for row in db.query(StudySession.subject).distinct().all() if row[0]]
+    suggestion = suggest_normalized_subject(query, existing)
+    return {"query": query, "suggestion": suggestion}
+
+
 @router.post("", response_model=SessionOut, status_code=status.HTTP_201_CREATED)
 def create_session(
     payload: SessionCreate,

@@ -127,6 +127,10 @@
             <label for="form-subject">Subject <span class="required">*</span></label>
             <input type="text" id="form-subject" list="subject-datalist" placeholder="e.g. Data Structures & Algorithms" maxlength="50" required autocomplete="off">
             <datalist id="subject-datalist"></datalist>
+            <div id="subject-suggestion-box" class="subject-suggestion" style="display: none;">
+              <span class="suggestion-text">💡 Did you mean "<strong id="suggested-subject-name"></strong>"?</span>
+              <button type="button" id="apply-suggestion-btn" class="btn btn-secondary btn-xs">Use suggestion</button>
+            </div>
             <span class="field-error" id="err-subject"></span>
           </div>
 
@@ -208,7 +212,7 @@
       </section>
     </div>
 
-    <!-- 4. AI/ML Insights Card (Phase 9 Showcase Placeholder) -->
+    <!-- 4. AI/ML Insights & Behavioral Analytics -->
     <section class="card insights-card" id="insights-card">
       <div class="card-header-flex">
         <div class="brand">
@@ -217,12 +221,15 @@
             <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
             <line x1="12" y1="22.08" x2="12" y2="12"/>
           </svg>
-          <h2>AI / ML Insights & Forecast</h2>
+          <h2>AI / ML Insights &amp; Forecast</h2>
         </div>
-        <span class="badge badge-accent" id="ml-confidence-badge">Ready for Phase 9</span>
+        <span class="badge badge-accent" id="ml-confidence-badge">AI Engine Active</span>
       </div>
       <div id="insights-content" class="insights-content">
-        <p class="placeholder-text">AI/ML consistent study forecast, next-day streak risk assessment, and smart study recommendations will activate in Phase 9.</p>
+        <div class="insights-loading">
+          <div class="spinner-small"></div>
+          <span class="subtext">Analyzing study history &amp; evaluating behavioral models...</span>
+        </div>
       </div>
     </section>
 

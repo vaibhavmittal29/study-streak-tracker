@@ -248,3 +248,21 @@ def test_disk_persistence_across_connections() -> None:
             assert saved.duration_minutes == 45
             assert saved.date == date(2026, 10, 15)
         engine_2.dispose()
+
+
+def test_suggest_subject_endpoint(client: TestClient) -> None:
+    """Verify GET /api/sessions/suggest-subject returns NLP suggestion."""
+    client.post(
+        "/api/sessions",
+        json={"subject": "Machine Learning", "duration_minutes": 60, "date": "2026-10-18"},
+    )
+
+    # Acronym query
+    res = client.get("/api/sessions/suggest-subject?query=ML")
+    assert res.status_code == 200
+    assert res.json()["suggestion"] == "Machine Learning"
+
+    # Exact match query returns None
+    res_exact = client.get("/api/sessions/suggest-subject?query=Machine%20Learning")
+    assert res_exact.status_code == 200
+    assert res_exact.json()["suggestion"] is None
